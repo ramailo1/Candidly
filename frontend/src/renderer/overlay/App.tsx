@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './styles.css';
+import MockInterviewPanel from './MockInterviewPanel';
+import FeedbackModal from './FeedbackModal';
+import SessionStats from './SessionStats';
+import CopyButtons from './CopyButtons';
 
 interface Question {
   text: string;
@@ -12,6 +16,26 @@ interface Answer {
   codeSnippets?: { language: string; code: string }[];
 }
 
+interface MockQuestion {
+  text: string;
+  type: string;
+  difficulty: string;
+}
+
+interface FeedbackData {
+  overallScore: number;
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+  answerFeedback: Array<{
+    question: string;
+    answer: string;
+    score: number;
+    feedback: string;
+    suggestions: string[];
+  }>;
+}
+
 declare global {
   interface Window {
     electronAPI: any;
@@ -19,6 +43,7 @@ declare global {
 }
 
 export default function App() {
+  // Regular mode state
   const [isListening, setIsListening] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [status, setStatus] = useState('idle');
@@ -27,6 +52,18 @@ export default function App() {
   const [currentAnswer, setCurrentAnswer] = useState<Answer | null>(null);
   const [sessionTime, setSessionTime] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
+
+  // Mock interview state
+  const [isMockMode, setIsMockMode] = useState(false);
+  const [mockQuestion, setMockQuestion] = useState<MockQuestion | null>(null);
+  const [mockQuestionNumber, setMockQuestionNumber] = useState(1);
+  const [mockQuestionsHistory, setMockQuestionsHistory] = useState<string[]>([]);
+  const [mockAnswersHistory, setMockAnswersHistory] = useState<string[]>([]);
+
+  // Feedback state
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackData | null>(null);
 
   useEffect(() => {
     // Handle WebSocket messages from backend
