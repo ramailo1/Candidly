@@ -233,22 +233,34 @@ export default function App() {
       </div>
 
       <div className="controls">
-        <button
-          className={isListening ? 'btn-stop' : 'btn-start'}
-          onClick={handleStartStop}
-        >
-          {isListening ? 'Stop' : 'Start'}
-        </button>
-
-        {isListening && (
+        {!isMockMode ? (
           <>
-            <button onClick={handlePauseResume}>
-              {isPaused ? 'Resume' : 'Pause'}
+            <button
+              className={isListening ? 'btn-stop' : 'btn-start'}
+              onClick={handleStartStop}
+            >
+              {isListening ? 'Stop' : 'Start'}
             </button>
-            <button onClick={handleToggleMode}>
-              Mode: {mode}
+
+            {isListening && (
+              <>
+                <button onClick={handlePauseResume}>
+                  {isPaused ? 'Resume' : 'Pause'}
+                </button>
+                <button onClick={handleToggleMode}>
+                  Mode: {mode}
+                </button>
+              </>
+            )}
+
+            <button onClick={handleStartMockInterview} className="btn-mock">
+              Mock Interview
             </button>
           </>
+        ) : (
+          <div className="mock-mode-indicator">
+            🎯 Mock Interview Mode Active
+          </div>
         )}
 
         <button onClick={() => window.electronAPI.openSettings()}>
@@ -256,15 +268,29 @@ export default function App() {
         </button>
       </div>
 
-      <div className="stats">
-        <span>Time: {formatTime(sessionTime)}</span>
-        <span>Questions: {questionCount}</span>
-        <span className={`status status-${status}`}>
-          {isPaused ? 'PAUSED' : status}
-        </span>
-      </div>
+      {/* Session Stats */}
+      {!isMockMode && (
+        <SessionStats
+          sessionTime={sessionTime}
+          questionCount={questionCount}
+          status={status}
+          isPaused={isPaused}
+        />
+      )}
 
-      {currentQuestion && (
+      {/* Mock Interview Panel */}
+      {isMockMode && (
+        <MockInterviewPanel
+          isActive={isMockMode}
+          currentQuestion={mockQuestion}
+          onNext={handleNextMockQuestion}
+          onStop={handleStopMockInterview}
+          questionNumber={mockQuestionNumber}
+        />
+      )}
+
+      {/* Regular Mode - Question & Answer Display */}
+      {!isMockMode && currentQuestion && (
         <div className="question-section">
           <div className="section-header">
             <h3>Question Detected</h3>
@@ -274,13 +300,10 @@ export default function App() {
         </div>
       )}
 
-      {currentAnswer && (
+      {!isMockMode && currentAnswer && (
         <div className="answer-section">
           <div className="section-header">
             <h3>Suggested Answer</h3>
-            <button onClick={handleCopyAnswer} className="btn-copy">
-              Copy
-            </button>
           </div>
           <div className="answer-content">
             <p>{currentAnswer.text}</p>
@@ -292,14 +315,28 @@ export default function App() {
               </div>
             ))}
           </div>
+          <CopyButtons
+            answerText={currentAnswer.text}
+            codeSnippets={currentAnswer.codeSnippets}
+          />
         </div>
       )}
 
-      {isPaused && (
+      {/* Pause Overlay */}
+      {isPaused && !isMockMode && (
         <div className="pause-overlay">
           <div className="pause-message">PAUSED</div>
         </div>
       )}
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        isLoading={feedbackLoading}
+        feedback={feedback}
+        onRequestFeedback={handleRequestFeedback}
+        onClose={handleCloseFeedbackModal}
+      />
     </div>
   );
 }
