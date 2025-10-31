@@ -186,10 +186,44 @@ export default function App() {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  const handleStartMockInterview = () => {
+    // Start mock interview with default settings
+    setIsMockMode(true);
+    setMockQuestionNumber(1);
+    setMockQuestionsHistory([]);
+    setMockAnswersHistory([]);
+    setFeedback(null);
+
+    window.electronAPI.wsEmit('start-mock-interview', {
+      difficulty: 'medium',
+      questionTypes: ['behavioral', 'technical', 'coding'],
+      context: { enabled: false },
+      interval: 120
+    });
+  };
+
+  const handleNextMockQuestion = () => {
+    setMockQuestionNumber(prev => prev + 1);
+    window.electronAPI.wsEmit('mock-next-question', {});
+  };
+
+  const handleStopMockInterview = () => {
+    window.electronAPI.wsEmit('stop-mock-interview', {});
+  };
+
+  const handleRequestFeedback = () => {
+    setFeedbackLoading(true);
+    window.electronAPI.wsEmit('request-mock-feedback', {
+      questions: mockQuestionsHistory,
+      answers: mockAnswersHistory,
+      context: { enabled: false }
+    });
+  };
+
+  const handleCloseFeedbackModal = () => {
+    setShowFeedbackModal(false);
+    setFeedback(null);
+    setFeedbackLoading(false);
   };
 
   return (
