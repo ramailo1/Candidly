@@ -70,20 +70,22 @@ export default function App() {
     window.electronAPI.onWSMessage((event: string, data: any) => {
       switch (event) {
         case 'question-detected':
-          setCurrentQuestion({
-            text: data.question,
-            source: data.source,
-            confidence: data.confidence
-          });
-          setQuestionCount(prev => prev + 1);
-          // Auto-generate answer
-          window.electronAPI.wsEmit('generate-answer', {
-            question: data.question,
-            mode,
-            provider: 'openai',
-            model: 'gpt-4',
-            context: { enabled: false }
-          });
+          if (!isMockMode) {
+            setCurrentQuestion({
+              text: data.question,
+              source: data.source,
+              confidence: data.confidence
+            });
+            setQuestionCount(prev => prev + 1);
+            // Auto-generate answer
+            window.electronAPI.wsEmit('generate-answer', {
+              question: data.question,
+              mode,
+              provider: 'openai',
+              model: 'gpt-4',
+              context: { enabled: false }
+            });
+          }
           break;
 
         case 'answer-ready':
@@ -95,6 +97,9 @@ export default function App() {
 
         case 'status-update':
           setStatus(data.status);
+          if (data.status === 'mock-interview') {
+            setIsMockMode(true);
+          }
           break;
 
         case 'listening-paused':
@@ -103,6 +108,28 @@ export default function App() {
 
         case 'listening-resumed':
           setIsPaused(false);
+          break;
+
+        case 'mock-question':
+          setMockQuestion({
+            text: data.question,
+            type: data.type,
+            difficulty: data.difficulty
+          });
+          setMockQuestionsHistory(prev => [...prev, data.question]);
+          break;
+
+        case 'mock-interview-ended':
+          setIsMockMode(false);
+          setShowFeedbackModal(true);
+          // Store the questions and answers for feedback
+          setMockQuestionsHistory(data.questions || []);
+          setMockAnswersHistory(data.answers || []);
+          break;
+
+        case 'mock-feedback-ready':
+          setFeedback(data);
+          setFeedbackLoading(false);
           break;
       }
     });
